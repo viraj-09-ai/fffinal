@@ -1,36 +1,55 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { QrReader } from 'react-qr-reader';
-import axios from 'axios';
 
-export default function Scanner() {
-  const [scanResult, setScanResult] = useState(null);
+const Scanner = () => {
+  const [scanResult, setScanResult] = useState('');
+  const [status, setStatus] = useState('');
 
-  const handleScan = async (result, error) => {
+  const handleScan = async (result) => {
     if (result) {
-      setScanResult(result?.text);
+      const passId = result?.text;
+      setScanResult(passId);
+      
       try {
-        await axios.post('http://localhost:5000/api/visitors/scan', { qrData: result.text });
-        alert('Pass verified and check-log updated!');
-      } catch (err) {
-        alert('Invalid or expired pass.');
+        // Verifying scan against your live Render backend
+        const response = await fetch('https://fffinal-2.onrender.com/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passId })
+        });
+
+        if (response.ok) {
+          setStatus('Scan successful! Check-in recorded.');
+        } else {
+          setStatus('Invalid Pass ID.');
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus('Error connecting to server.');
       }
-    }
-    if (error) {
-      console.info(error);
     }
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded shadow text-center">
-      <h2 className="text-2xl font-bold mb-4">Scan Visitor Badge</h2>
-      <div className="mb-4">
+    <div className="p-8 max-w-md mx-auto text-center">
+      <h1 className="text-2xl font-bold mb-6">Scan Visitor Pass</h1>
+      
+      <div className="border-4 border-dashed border-gray-300 p-2 mb-4">
         <QrReader
           onResult={handleScan}
           constraints={{ facingMode: 'environment' }}
-          style={{ width: '100%' }}
+          containerStyle={{ width: '100%' }}
         />
       </div>
-      {scanResult && <p className="text-green-600 font-semibold">Last Scanned: {scanResult}</p>}
+
+      {scanResult && <p className="text-gray-600 mb-2">Scanned ID: {scanResult}</p>}
+      {status && (
+        <p className={`font-bold ${status.includes('successful') ? 'text-green-600' : 'text-red-600'}`}>
+          {status}
+        </p>
+      )}
     </div>
   );
-}
+};
+
+export default Scanner;

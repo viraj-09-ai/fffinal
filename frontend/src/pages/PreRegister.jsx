@@ -1,46 +1,74 @@
-import { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
-export default function PreRegister() {
-  const [formData, setFormData] = useState({ name: '', email: '', purpose: '', validUntil: '' });
-  const [message, setMessage] = useState('');
+const PreRegister = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', date: '' });
+  const [status, setStatus] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setStatus('Submitting...');
+
     try {
-      await axios.post('http://localhost:5000/api/visitors/register', formData);
-      setMessage('Pre-registration successful! Pass generated and email sent.');
-      setFormData({ name: '', email: '', purpose: '', validUntil: '' });
+      // Posting to your live Render backend
+      const response = await fetch('https://fffinal-2.onrender.com/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setStatus('Registration successful! Email sent to visitor.');
+        setFormData({ name: '', email: '', date: '' });
+      } else {
+        setStatus('Failed to register visitor.');
+      }
     } catch (error) {
-      setMessage('Error registering visitor. Please try again.');
+      console.error(error);
+      setStatus('Error connecting to server.');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Visitor Pre-Registration</h2>
-      {message && <p className="mb-4 text-sm text-blue-600">{message}</p>}
+    <div className="p-8 max-w-md mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Pre-Register Visitor</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input 
-          type="text" placeholder="Full Name" required className="w-full p-2 border rounded"
-          value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
-        />
-        <input 
-          type="email" placeholder="Email Address" required className="w-full p-2 border rounded"
-          value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
-        />
-        <input 
-          type="text" placeholder="Purpose of Visit" required className="w-full p-2 border rounded"
-          value={formData.purpose} onChange={(e) => setFormData({...formData, purpose: e.target.value})}
-        />
-        <input 
-          type="date" required className="w-full p-2 border rounded"
-          value={formData.validUntil} onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
-        />
+        <div>
+          <label className="block mb-1 font-medium">Visitor Name</label>
+          <input 
+            type="text" 
+            required
+            className="w-full border p-2 rounded"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Visitor Email</label>
+          <input 
+            type="email" 
+            required
+            className="w-full border p-2 rounded"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Date of Visit</label>
+          <input 
+            type="date" 
+            required
+            className="w-full border p-2 rounded"
+            value={formData.date}
+            onChange={(e) => setFormData({...formData, date: e.target.value})}
+          />
+        </div>
         <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
-          Register Visitor
+          Register & Send Pass
         </button>
       </form>
+      {status && <p className="mt-4 font-medium text-center">{status}</p>}
     </div>
   );
-}
+};
+
+export default PreRegister;
